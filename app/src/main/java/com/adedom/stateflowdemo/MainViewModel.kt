@@ -1,7 +1,6 @@
 package com.adedom.stateflowdemo
 
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -13,26 +12,21 @@ import kotlinx.coroutines.launch
 
 @FlowPreview
 @ExperimentalCoroutinesApi
-class MainViewModel : ViewModel() {
+class MainViewModel : BaseViewModel<MainState>(MainState()) {
 
-    private val actionChannel = BroadcastChannel<MainAction>(Channel.BUFFERED)
-
-    val stateFlow: StateFlow<MainState>
+    private val channel = BroadcastChannel<MainAction>(Channel.BUFFERED)
 
     fun process(action: MainAction) {
-        viewModelScope.launch {
-            actionChannel.send(action)
+        launch {
+            channel.send(action)
         }
     }
 
     init {
-        val initial = MainState()
-        stateFlow = MutableStateFlow(initial)
-
         // keep resume seconds
         var resume = 0L
 
-        actionChannel
+        channel
             .asFlow()
             .onEach { action ->
                 when (action) {
@@ -51,28 +45,28 @@ class MainViewModel : ViewModel() {
                             .takeWhile { it <= MAX_SECONDS }
                             .map {
                                 MainState(
-                                    seconds = it,
                                     watchState = MainState.WatchState.RUNNING,
+                                    seconds = it,
                                 )
                             }
-                            .onCompletion { emit(initial) }
+                            .onCompletion { emit(MainState()) }
                     }
                     MainAction.PAUSE -> {
                         flowOf(
                             MainState(
-                                MainState.WatchState.PAUSED,
-                                resume
+                                watchState = MainState.WatchState.PAUSED,
+                                seconds = resume,
                             )
                         )
                     }
                     MainAction.RESET -> {
-                        flowOf(initial)
+                        flowOf(MainState())
                     }
                 }
             }
-            .onEach { stateFlow.value = it }
+            .onEach { setState(it) }
             .onEach { Log.d("###", "Main state: $it") }
-            .catch { }
+            .catch { setError(it) }
             .launchIn(viewModelScope)
     }
 
