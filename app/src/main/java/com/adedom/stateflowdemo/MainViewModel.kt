@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 @FlowPreview
 @ExperimentalCoroutinesApi
@@ -18,7 +19,11 @@ class MainViewModel : ViewModel() {
 
     val stateFlow: StateFlow<MainState>
 
-    suspend fun process(action: MainAction) = actionChannel.send(action)
+    fun process(action: MainAction) {
+        viewModelScope.launch {
+            actionChannel.send(action)
+        }
+    }
 
     init {
         val initial = MainState()

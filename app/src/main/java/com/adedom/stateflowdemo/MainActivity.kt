@@ -1,20 +1,18 @@
 package com.adedom.stateflowdemo
 
 import android.os.Bundle
-import android.view.View
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.adedom.stateflowdemo.MainState.WatchState
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 
 @ExperimentalCoroutinesApi
 @FlowPreview
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private val viewModel by viewModels<MainViewModel>()
 
@@ -22,24 +20,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        lifecycleScope.launchWhenStarted {
-            viewModel.stateFlow
-                    .onEach { render(it) }
-                    .catch { }
-                    .collect()
-        }
+        viewModel.stateFlow.observe { render(it) }
 
-        actionFlow()
-                .onEach { viewModel.process(it) }
-                .catch { }
-                .launchIn(lifecycleScope)
+        actionFlow().observe { viewModel.process(it) }
     }
 
     private fun actionFlow(): Flow<MainAction> {
         return merge(
-                buttonStart.clicks().map { MainAction.START },
-                buttonPause.clicks().map { MainAction.PAUSE },
-                buttonReset.clicks().map { MainAction.RESET },
+            buttonStart.clicks().map { MainAction.START },
+            buttonPause.clicks().map { MainAction.PAUSE },
+            buttonReset.clicks().map { MainAction.RESET },
         )
     }
 
@@ -50,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
         when (state.watchState) {
             WatchState.RUNNING -> {
-                buttonStart.run {
+                buttonStart.apply {
                     isEnabled = false
                     text = "START"
                 }
@@ -58,7 +48,7 @@ class MainActivity : AppCompatActivity() {
                 buttonReset.isEnabled = true
             }
             WatchState.PAUSED -> {
-                buttonStart.run {
+                buttonStart.apply {
                     isEnabled = true
                     text = "RESUME"
                 }
@@ -66,20 +56,13 @@ class MainActivity : AppCompatActivity() {
                 buttonReset.isEnabled = true
             }
             WatchState.IDLE -> {
-                buttonStart.run {
+                buttonStart.apply {
                     isEnabled = true
                     text = "START"
                 }
                 buttonPause.isEnabled = false
                 buttonReset.isEnabled = false
             }
-        }
-    }
-
-    private fun View.clicks(): Flow<Unit> {
-        return callbackFlow {
-            setOnClickListener { offer(Unit) }
-            awaitClose { setOnClickListener(null) }
         }
     }
 
