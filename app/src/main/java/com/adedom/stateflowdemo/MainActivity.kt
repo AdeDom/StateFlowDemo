@@ -3,7 +3,6 @@ package com.adedom.stateflowdemo
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
-import androidx.annotation.CheckResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.adedom.stateflowdemo.MainState.WatchState
@@ -17,21 +16,21 @@ import kotlinx.coroutines.flow.*
 @FlowPreview
 class MainActivity : AppCompatActivity() {
 
-    private val vm by viewModels<MainVM>()
+    private val viewModel by viewModels<MainViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         lifecycleScope.launchWhenStarted {
-            vm.stateFlow
+            viewModel.stateFlow
                     .onEach { render(it) }
                     .catch { }
                     .collect()
         }
 
         actionFlow()
-                .onEach { vm.process(it) }
+                .onEach { viewModel.process(it) }
                 .catch { }
                 .launchIn(lifecycleScope)
     }
@@ -76,13 +75,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-}
 
-@CheckResult
-@ExperimentalCoroutinesApi
-fun View.clicks(): Flow<Unit> {
-    return callbackFlow {
-        setOnClickListener { offer(Unit) }
-        awaitClose { setOnClickListener(null) }
+    private fun View.clicks(): Flow<Unit> {
+        return callbackFlow {
+            setOnClickListener { offer(Unit) }
+            awaitClose { setOnClickListener(null) }
+        }
     }
+
 }
