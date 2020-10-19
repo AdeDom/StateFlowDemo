@@ -7,22 +7,21 @@ import androidx.annotation.CheckResult
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.adedom.stateflowdemo.MainState.WatchState
-import com.adedom.stateflowdemo.databinding.ActivityMainBinding
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import kotlin.LazyThreadSafetyMode.NONE
 
 @ExperimentalCoroutinesApi
 @FlowPreview
 class MainActivity : AppCompatActivity() {
+
     private val vm by viewModels<MainVM>()
-    private val binding by lazy(NONE) { ActivityMainBinding.inflate(layoutInflater) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_main)
 
         lifecycleScope.launchWhenStarted {
             vm.stateFlow
@@ -39,41 +38,41 @@ class MainActivity : AppCompatActivity() {
 
     private fun actionFlow(): Flow<MainAction> {
         return merge(
-                binding.buttonStart.clicks().map { MainAction.START },
-                binding.buttonPause.clicks().map { MainAction.PAUSE },
-                binding.buttonReset.clicks().map { MainAction.RESET },
+                buttonStart.clicks().map { MainAction.START },
+                buttonPause.clicks().map { MainAction.PAUSE },
+                buttonReset.clicks().map { MainAction.RESET },
         )
     }
 
     private fun render(state: MainState) {
         val mm = (state.seconds / 60).toString().padStart(2, '0')
         val ss = (state.seconds % 60).toString().padStart(2, '0')
-        binding.textView.text = "$mm:$ss"
+        textView.text = "$mm:$ss"
 
         when (state.watchState) {
             WatchState.RUNNING -> {
-                binding.buttonStart.run {
+                buttonStart.run {
                     isEnabled = false
                     text = "START"
                 }
-                binding.buttonPause.isEnabled = true
-                binding.buttonReset.isEnabled = true
+                buttonPause.isEnabled = true
+                buttonReset.isEnabled = true
             }
             WatchState.PAUSED -> {
-                binding.buttonStart.run {
+                buttonStart.run {
                     isEnabled = true
                     text = "RESUME"
                 }
-                binding.buttonPause.isEnabled = false
-                binding.buttonReset.isEnabled = true
+                buttonPause.isEnabled = false
+                buttonReset.isEnabled = true
             }
             WatchState.IDLE -> {
-                binding.buttonStart.run {
+                buttonStart.run {
                     isEnabled = true
                     text = "START"
                 }
-                binding.buttonPause.isEnabled = false
-                binding.buttonReset.isEnabled = false
+                buttonPause.isEnabled = false
+                buttonReset.isEnabled = false
             }
         }
     }
