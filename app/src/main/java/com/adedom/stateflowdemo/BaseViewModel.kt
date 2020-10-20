@@ -40,6 +40,10 @@ abstract class BaseViewModel<S : Any>(initialState: S) : ViewModel(), CoroutineS
         _stateFlow.value = state
     }
 
+    protected fun setState(reducer: S.() -> S) {
+        _stateFlow.value = stateFlow.value.reducer()
+    }
+
     protected fun setError(throwable: Throwable) {
         _error.value = throwable
     }
